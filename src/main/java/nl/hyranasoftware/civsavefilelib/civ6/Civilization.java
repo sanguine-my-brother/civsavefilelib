@@ -13,12 +13,20 @@ public class Civilization {
     
     private long beginpos;
     private long endpos;
+    
     private boolean fullciv;
+    
     private String playername;
     private long playernamePos;
+    
     private boolean humanPlayer;
     private long humanPlayerPos;
+    
     private FullCivName civName;
+    private long fullCivName;
+    
+    private String civPassword;
+    private long civPasswordPos;
     
 
     public Civilization() {
@@ -93,6 +101,33 @@ public class Civilization {
     public void setCivName(FullCivName civName) {
         this.civName = civName;
     }
+
+    public String getCivPassword() {
+        return civPassword;
+    }
+
+    public void setCivPassword(String civPassword) {
+        this.civPassword = civPassword;
+    }
+
+    public long getCivPasswordPos() {
+        return civPasswordPos;
+    }
+
+    public void setCivPasswordPos(long civPasswordPos) {
+        this.civPasswordPos = civPasswordPos;
+    }
+
+    public long getFullCivName() {
+        return fullCivName;
+    }
+
+    public void setFullCivName(long fullCivName) {
+        this.fullCivName = fullCivName;
+    }
+    
+    
+    
     
     
     
