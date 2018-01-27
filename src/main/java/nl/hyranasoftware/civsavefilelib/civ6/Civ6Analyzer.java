@@ -30,11 +30,11 @@ public class Civ6Analyzer {
     final int[] civLevel = new int[]{0xAB, 0x55, 0xCA, 0x05};
     final int[] delimiter = new int[]{0x21, 0x01};
     final int[] playerPassword = new int[]{0x6c, 0xd1, 0x7c, 0x6e};
-    
 
     public List<Civilization> analyseSaveFile(RandomAccessFile ra) {
         try {
             List<Civilization> civs = new ArrayList();
+            List<Location> civLocs = new ArrayList();
             int c;
             while ((c = ra.read()) != -1) {
                 if (c == civBegin[0]) {
@@ -42,15 +42,14 @@ public class Civ6Analyzer {
                     if (c == civBegin[1]) {
                         c = ra.read();
                         if (c == civBegin[2]) {
-                            civs.add(findCivs(ra));
+                            civLocs.add(findCivs(ra));
                         }
                     }
                 }
             }
-            for (Civilization civ : civs) {
-                analyseCiv(civ, ra);
+            for (Location loc : civLocs) {
+                civs.add(analyseCiv(ra, loc));
             }
-            ra.close();
             return civs;
 
         } catch (FileNotFoundException ex) {
@@ -59,10 +58,10 @@ public class Civ6Analyzer {
             Logger.getLogger(main.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
-        
+
     }
 
-    private Civilization findCivs(RandomAccessFile fh) {
+    private Location findCivs(RandomAccessFile fh) {
         try {
             long beginCiv = fh.getFilePointer();
             long endCiv = 0l;
@@ -76,7 +75,8 @@ public class Civ6Analyzer {
                     }
                 }
             }
-            return new Civilization(beginCiv, endCiv);
+            Location location = new Location(beginCiv, endCiv);
+            return location;
 
         } catch (IOException ex) {
             Logger.getLogger(main.class.getName()).log(Level.SEVERE, null, ex);
@@ -85,25 +85,27 @@ public class Civ6Analyzer {
 
     }
 
-    private void analyseCiv(Civilization civ, RandomAccessFile fh) throws IOException {
-        fh.seek(civ.getBeginpos());
+    private Civilization analyseCiv(RandomAccessFile fh, Location loc) throws IOException {
+        Civilization civ = new Civilization();
+        fh.seek(loc.getBegin());
         //Get Civ name
-        while (fh.getFilePointer() != civ.getEndpos()) {
-            int c = fh.read();
+        int c = 0;
+        while (fh.getFilePointer() != loc.getEnd() && (c = fh.read()) != -1) {
+            
             if (c == civName[0]) {
                 c = fh.read();
                 if (c == civName[1]) {
                     c = fh.read();
                     if (c == civName[2]) {
                         fh.read();
-                        civ.setCivName(getCivName(fh));
+                        civ.setCivName(getCivName(fh, loc));
                         if (civ.getCivName() != null) {
                             civ.setFullciv(true);
-                            civ.setHumanPlayer(isHuman(civ, fh));
+                            civ.setHumanPlayer(isHuman(civ, fh, loc));
                             if (civ.isHumanPlayer()) {
-                                civ.setPlayername(findPlayerName(civ, fh));
-                                civ.setCivPassword(findCivPassword(civ, fh));
-                                fh.seek(civ.getEndpos());
+                                civ.setPlayername(findPlayerName(civ, fh, loc));
+                                civ.setCivPassword(findCivPassword(civ, fh, loc));
+                                fh.seek(loc.getEnd());
                             }
                         } else {
                             civ.setFullciv(false);
@@ -113,6 +115,7 @@ public class Civ6Analyzer {
                 }
             }
         }
+        return civ;
 
     }
 
@@ -126,7 +129,7 @@ public class Civ6Analyzer {
                     if (c == civLevel[1]) {
                         c = fh.read();
                         if (c == civLevel[2]) {
-                            System.out.println(fh.read());
+                            System.out.println("MinorOrFull" + fh.read());
                         }
                     }
                 }
@@ -138,28 +141,38 @@ public class Civ6Analyzer {
         return true;
     }
 
-    private FullCivName getCivName(RandomAccessFile fh) throws IOException {
+    private FullCivName getCivName(RandomAccessFile fh, Location loc) throws IOException {
         int c;
         boolean foundCivName = false;
         String name = "";
-        while (!foundCivName) {
-            c = fh.read();
-            if (c == 0x21) {
+        while ((c = fh.read()) != -1) {
+            if (c == civName[0]) {
                 c = fh.read();
-                if (c == 0x01) {
-                    //fh.seek((fh.getFilePointer() - 1));
-                    while (true) {
-                        c = fh.read();
-                        if (c == 0xb1 || c == 0xee || c == 0x40) {
-                            foundCivName = true;
-                            break;
-                        }
-                        if (c != 0x00) {
-                            name = name + (new Character((char) c).toString());
-                        }
+                if (c == civName[1]) {
+                    c = fh.read();
+                    if (c == civName[2]) {
+                        while (!foundCivName) {
+                            c = fh.read();
+                            if (c == 0x21) {
+                                c = fh.read();
+                                if (c == 0x01) {
+                                    //fh.seek((fh.getFilePointer() - 1));
+                                    while (true) {
+                                        c = fh.read();
+                                        if (c == 0xb1 || c == 0xee || c == 0x40) {
+                                            foundCivName = true;
+                                            break;
+                                        }
+                                        if (c != 0x00) {
+                                            name = name + (new Character((char) c).toString());
+                                        }
 
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
-                    break;
                 }
             }
         }
@@ -170,12 +183,12 @@ public class Civ6Analyzer {
         } catch (Exception ex) {
 
         }
-        System.out.println(civenum);
+        System.out.println("getcivname" + civenum);
         return civenum;
     }
 
-    private boolean isHuman(Civilization civ, RandomAccessFile fh) throws IOException {
-        fh.seek(civ.getBeginpos());
+    private boolean isHuman(Civilization civ, RandomAccessFile fh, Location loc) throws IOException {
+        fh.seek(loc.getBegin());
         int c = 0;
         boolean human = false;
         boolean foundHumanity = false;
@@ -196,25 +209,23 @@ public class Civ6Analyzer {
                                     human = false;
                                     foundHumanity = true;
                                 }
-                                civ.setHumanPlayerPos(fh.getFilePointer() - 1);
-
                             }
                         }
                     }
                 }
             }
         }
-        System.out.println(human);
+        System.out.println("findhumanity" + human);
         return human;
 
     }
 
-    private String findPlayerName(Civilization civ, RandomAccessFile fh) throws IOException {
-        fh.seek(civ.getBeginpos());
+    private String findPlayerName(Civilization civ, RandomAccessFile fh, Location loc) throws IOException {
+        fh.seek(loc.getBegin());
         int c = 0;
         String playerName = "";
         boolean foundPlayerName = false;
-        while (fh.getFilePointer() != civ.getEndpos() && !foundPlayerName) {
+        while (fh.getFilePointer() != loc.getEnd() && !foundPlayerName) {
             c = fh.read();
             if (c == playerNameArray[0]) {
                 c = fh.read();
@@ -248,22 +259,22 @@ public class Civ6Analyzer {
                 }
             }
         }
-        System.out.println(playerName);
+        System.out.println("playername" + playerName);
         return playerName;
     }
 
-    private String findCivPassword(Civilization civ, RandomAccessFile fh) throws IOException {
-        fh.seek(civ.getBeginpos());
+    private String findCivPassword(Civilization civ, RandomAccessFile fh, Location loc) throws IOException {
+        fh.seek(loc.getBegin());
         int c = 0;
         String playerPasswordstring = "";
         boolean foundPlayerPassword = false;
-        while(fh.getFilePointer() != civ.getEndpos() && !foundPlayerPassword){
+        while (fh.getFilePointer() != loc.getEnd() && !foundPlayerPassword) {
             c = fh.read();
-            if(c == playerPassword[0]){
+            if (c == playerPassword[0]) {
                 c = fh.read();
-                if(c == playerPassword[1]){
+                if (c == playerPassword[1]) {
                     c = fh.read();
-                    if(c == playerPassword[2]){
+                    if (c == playerPassword[2]) {
                         while (!foundPlayerPassword) {
                             c = fh.read();
                             if (c == 0x21) {
@@ -286,20 +297,56 @@ public class Civ6Analyzer {
                                     }
                                 }
                             }
-                            if(c == 0x46){
+                            if (c == 0x46) {
                                 c = fh.read();
-                                if(c == 0xfc){
+                                if (c == 0xfc) {
                                     break;
                                 }
                             }
                         }
                     }
                 }
-                
+
             }
         }
-        System.out.println(playerPasswordstring);
+        System.out.println("password" + playerPasswordstring);
         return playerPasswordstring;
+    }
+
+    public Location findCiv(Civilization civ, RandomAccessFile fh) {
+        try {
+            long beginCiv = fh.getFilePointer();
+            long endCiv = 0l;
+            int read;
+            while ((read = fh.read()) != -1) {
+                if (read == civEnd[0]) {
+                    read = fh.read();
+                    if (read == civEnd[1]) {
+                        endCiv = fh.getFilePointer();
+                        Location loc = new Location(beginCiv, endCiv);
+                        if (civ.getCivName() == getCivName(fh, loc)) {
+                            return loc;
+                        }
+                    }
+                }
+            }
+            Location location = new Location(beginCiv, endCiv);
+            return location;
+
+        } catch (IOException ex) {
+            Logger.getLogger(main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public Civilization resyncCiv(Civilization civ, RandomAccessFile ra) {
+        List<Civilization> tempCivs = analyseSaveFile(ra);
+        for (Civilization tempCiv : tempCivs) {
+            if (tempCiv.equals(civ)) {
+                return tempCiv;
+            }
+        }
+        return civ;
     }
 
 }

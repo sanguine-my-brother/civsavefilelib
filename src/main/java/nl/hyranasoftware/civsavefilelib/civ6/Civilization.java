@@ -5,54 +5,26 @@
  */
 package nl.hyranasoftware.civsavefilelib.civ6;
 
+import java.util.Objects;
+
 /**
  *
  * @author danny_000
  */
 public class Civilization {
     
-    private long beginpos;
-    private long endpos;
+
     
     private boolean fullciv;
-    
     private String playername;
-    private long playernamePos;
-    
     private boolean humanPlayer;
-    private long humanPlayerPos;
-    
     private FullCivName civName;
-    private long fullCivName;
-    
     private String civPassword;
-    private long civPasswordPos;
     
 
     public Civilization() {
     }
 
-    public Civilization(long beginpos, long endpos) {
-        this.beginpos = beginpos;
-        this.endpos = endpos;
-    }
-    
-
-    public long getBeginpos() {
-        return beginpos;
-    }
-
-    public void setBeginpos(long beginpos) {
-        this.beginpos = beginpos;
-    }
-
-    public long getEndpos() {
-        return endpos;
-    }
-
-    public void setEndpos(long endpos) {
-        this.endpos = endpos;
-    }
 
     public boolean isFullciv() {
         return fullciv;
@@ -70,13 +42,6 @@ public class Civilization {
         this.playername = playername;
     }
 
-    public long getPlayernamePos() {
-        return playernamePos;
-    }
-
-    public void setPlayernamePos(long playernamePos) {
-        this.playernamePos = playernamePos;
-    }
 
     public boolean isHumanPlayer() {
         return humanPlayer;
@@ -86,13 +51,6 @@ public class Civilization {
         this.humanPlayer = humanPlayer;
     }
 
-    public long getHumanPlayerPos() {
-        return humanPlayerPos;
-    }
-
-    public void setHumanPlayerPos(long humanPlayerPos) {
-        this.humanPlayerPos = humanPlayerPos;
-    }
 
     public FullCivName getCivName() {
         return civName;
@@ -109,22 +67,33 @@ public class Civilization {
     public void setCivPassword(String civPassword) {
         this.civPassword = civPassword;
     }
-
-    public long getCivPasswordPos() {
-        return civPasswordPos;
+    
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 67 * hash + Objects.hashCode(this.civName);
+        return hash;
     }
 
-    public void setCivPasswordPos(long civPasswordPos) {
-        this.civPasswordPos = civPasswordPos;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Civilization other = (Civilization) obj;
+        if (this.civName != other.civName) {
+            return false;
+        }
+        return true;
     }
-
-    public long getFullCivName() {
-        return fullCivName;
-    }
-
-    public void setFullCivName(long fullCivName) {
-        this.fullCivName = fullCivName;
-    }
+    
+    
     
     
     
