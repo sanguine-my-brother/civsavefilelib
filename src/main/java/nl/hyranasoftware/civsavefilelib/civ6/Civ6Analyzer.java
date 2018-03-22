@@ -42,13 +42,12 @@ public class Civ6Analyzer {
                     if (c == civBegin[1]) {
                         c = ra.read();
                         if (c == civBegin[2]) {
-                            civLocs.add(findCivs(ra));
+                            Location loc = findCivs(ra);
+                            civs.add(analyseCiv(ra, loc));
+                            civLocs.add(loc);
                         }
                     }
                 }
-            }
-            for (Location loc : civLocs) {
-                civs.add(analyseCiv(ra, loc));
             }
             return civs;
 
@@ -64,8 +63,10 @@ public class Civ6Analyzer {
     private Location findCivs(RandomAccessFile fh) {
         try {
             long beginCiv = fh.getFilePointer();
+
             long endCiv = 0l;
             int read;
+
             while ((read = fh.read()) != -1) {
                 if (read == civEnd[0]) {
                     read = fh.read();
@@ -91,7 +92,7 @@ public class Civ6Analyzer {
         //Get Civ name
         int c = 0;
         while (fh.getFilePointer() != loc.getEnd() && (c = fh.read()) != -1) {
-            
+
             if (c == civName[0]) {
                 c = fh.read();
                 if (c == civName[1]) {
@@ -115,6 +116,7 @@ public class Civ6Analyzer {
                 }
             }
         }
+        fh.seek(loc.getEnd());
         return civ;
 
     }
@@ -144,6 +146,7 @@ public class Civ6Analyzer {
     private FullCivName getCivName(RandomAccessFile fh, Location loc) throws IOException {
         int c;
         boolean foundCivName = false;
+        fh.seek(loc.getBegin());
         String name = "";
         while ((c = fh.read()) != -1) {
             if (c == civName[0]) {
@@ -179,11 +182,12 @@ public class Civ6Analyzer {
 
         FullCivName civenum = null;
         try {
+            System.out.println("beforeenum " + name);
             civenum = FullCivName.valueOf(name);
         } catch (Exception ex) {
 
         }
-        System.out.println("getcivname" + civenum);
+        System.out.println("getcivname " + civenum);
         return civenum;
     }
 
@@ -315,23 +319,51 @@ public class Civ6Analyzer {
 
     public Location findCiv(Civilization civ, RandomAccessFile fh) {
         try {
-            long beginCiv = fh.getFilePointer();
+            long beginCiv = 0l;
+            boolean foundCiv = false;
             long endCiv = 0l;
-            int read;
-            while ((read = fh.read()) != -1) {
-                if (read == civEnd[0]) {
+            int read = 0;
+
+            while (!foundCiv) {
+                fh.seek(endCiv);
+                while (!foundCiv) {
                     read = fh.read();
-                    if (read == civEnd[1]) {
-                        endCiv = fh.getFilePointer();
-                        Location loc = new Location(beginCiv, endCiv);
-                        if (civ.getCivName() == getCivName(fh, loc)) {
-                            return loc;
+                    if (read == civBegin[0]) {
+                        read = fh.read();
+                        if (read == civBegin[1]) {
+                            read = fh.read();
+                            if (read == civBegin[2]) {
+                                beginCiv = fh.getFilePointer();
+                                break;
+                            }
                         }
                     }
                 }
+
+                while (!foundCiv) {
+                    read = fh.read();
+                    if (read == civEnd[0]) {
+                        read = fh.read();
+                        if (read == civEnd[1]) {
+                            endCiv = fh.getFilePointer();
+                            Location loc = new Location(beginCiv, endCiv);
+                            if (civ.getCivName() == getCivName(fh, loc)) {
+                                foundCiv = true;
+                                return loc;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (read == -1) {
+                    break;
+                }
+                if (foundCiv) {
+                    Location location = new Location(beginCiv, endCiv);
+                    return location;
+                }
             }
-            Location location = new Location(beginCiv, endCiv);
-            return location;
 
         } catch (IOException ex) {
             Logger.getLogger(main.class.getName()).log(Level.SEVERE, null, ex);

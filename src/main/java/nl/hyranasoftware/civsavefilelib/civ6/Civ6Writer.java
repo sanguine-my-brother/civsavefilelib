@@ -115,8 +115,11 @@ public class Civ6Writer {
                                 fh.seek(fh.getFilePointer() -1);
                                 if(makeHuman){
                                     fh.writeByte(0x03);
+                                    
+                                    foundHumanity = true;
                                 }else{
                                     fh.writeByte(0x01);
+                                     foundHumanity = true;
                                 }
                             }
                         }

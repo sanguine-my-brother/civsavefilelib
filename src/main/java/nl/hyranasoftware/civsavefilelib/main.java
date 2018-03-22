@@ -12,6 +12,7 @@ import java.util.List;
 import nl.hyranasoftware.civsavefilelib.civ6.Civ6Analyzer;
 import nl.hyranasoftware.civsavefilelib.civ6.Civ6Writer;
 import nl.hyranasoftware.civsavefilelib.civ6.Civilization;
+import nl.hyranasoftware.civsavefilelib.civ6.Location;
 
 /**
  *
@@ -24,7 +25,7 @@ public class main {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws IOException {
-        String fileName = "C:\\Users\\danny_000\\programming\\civsavefilelib\\src\\main\\java\\nl\\hyranasoftware\\civsavefilelib\\huge1.Civ6Save";
+        String fileName = "C:\\Users\\danny_000\\programming\\civsavefilelib\\src\\main\\java\\nl\\hyranasoftware\\civsavefilelib\\4players.Civ6Save";
 
         File file = new File(fileName);
         RandomAccessFile fh = new RandomAccessFile(file, "rw");
@@ -34,14 +35,17 @@ public class main {
         RandomAccessFile xd = new RandomAccessFile(file, "rw");
         Civ6Writer civ6writer = new Civ6Writer();
         int i = 0;
-        /**
+        
         for (Civilization civ : civs) {
             if (!civ.isHumanPlayer() && civ.isFullciv()) {
-
-                civ6writer.changeCivToHuman(civ6.findCiv(civ, fh), xd, "Human1");
+                fh.seek(0l);
+                Location loc = civ6.findCiv(civ, fh);
+                civ6writer.changeCivToHuman(loc, xd, "ConvertedHuman");
+                break;
             }
         }
-        */
+        
+        
 
     }
 
